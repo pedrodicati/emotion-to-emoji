@@ -1,7 +1,6 @@
 import cv2
-from fer import FER
-
-emotion_detector = FER()
+from deepface import DeepFace
+from collections import Counter
 
 emoji_paths = {
     "happy": "emojis/happy1.png",
@@ -34,13 +33,12 @@ def overlay_emoji(frame, emoji, x, y, w, h):
     new_h = min(new_h, frame.shape[0] - new_y)
 
     emoji = cv2.resize(emoji, (new_w, new_h))
-    for c in range(3):  # Itera pelos canais BGR
+    for c in range(3):
         frame[new_y : new_y + new_h, new_x : new_x + new_w, c] = emoji[:, :, c] * (
             emoji[:, :, 3] / 255.0
         ) + frame[new_y : new_y + new_h, new_x : new_x + new_w, c] * (
             1 - emoji[:, :, 3] / 255.0
         )
-
 
 cap = cv2.VideoCapture(0)
 
@@ -55,37 +53,33 @@ while True:
     if not ret:
         break
 
-    gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-
-    emotions = emotion_detector.detect_emotions(frame)
+    emotions = DeepFace.analyze(
+        frame,
+        actions=["emotion"],
+        enforce_detection=False,
+        detector_backend="mediapipe",
+    )
 
     for face in emotions:
-        x, y, w, h = face["box"]
+        x, y, w, h = (
+            face["region"]["x"],
+            face["region"]["y"],
+            face["region"]["w"],
+            face["region"]["h"],
+        )
         x, y = max(x, 0), max(y, 0)
 
-        emotion = max(face["emotions"], key=face["emotions"].get)
+        emotion = face["dominant_emotion"]
 
         emotion_history.append(emotion)
         if len(emotion_history) > history_length:
             emotion_history.pop(0)
-
-        from collections import Counter
 
         smoothed_emotion = Counter(emotion_history).most_common(1)[0][0]
 
         emoji = emojis.get(smoothed_emotion, emojis["neutral"])
 
         overlay_emoji(frame, emoji, x, y, w, h)
-
-        cv2.putText(
-            frame,
-            smoothed_emotion,
-            (x, y - 10),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.9,
-            (0, 255, 0),
-            2,
-        )
 
     cv2.imshow("Detecção de Emoções em Tempo Real", frame)
 
