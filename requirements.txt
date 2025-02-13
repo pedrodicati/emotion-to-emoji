@@ -1,3 +1,4 @@
-opencv-python
-deepface
-tf_keras
+opencv-python~=4.11.0.86
+deepface~=0.0.93
+tf_keras~=2.18.0
+ultralytics~=8.3.74

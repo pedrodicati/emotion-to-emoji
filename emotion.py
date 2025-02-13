@@ -1,6 +1,7 @@
 import cv2
 from deepface import DeepFace
 from collections import Counter
+import os
 
 emoji_paths = {
     "happy": "emojis/happy1.png",
@@ -48,6 +49,9 @@ if not cap.isOpened():
 emotion_history = []
 history_length = 5
 
+if os.name == 'posix':
+    cv2.namedWindow("Detecção de Emoções em Tempo Real", cv2.WINDOW_NORMAL)
+
 while True:
     ret, frame = cap.read()
     if not ret:
@@ -57,7 +61,7 @@ while True:
         frame,
         actions=["emotion"],
         enforce_detection=False,
-        detector_backend="mediapipe",
+        detector_backend="yolov8",
     )
 
     for face in emotions:
